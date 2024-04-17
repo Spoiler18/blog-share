@@ -28,11 +28,19 @@ namespace BlogApi.Controllers
         }
 
         [AllowAnonymous]
-        [Route("Register")]
+        [Route("ResetPassword")]
         [HttpPost]
-        public async Task<IActionResult> UserRegistration(UserDetails userDetails)
+        public async Task<IActionResult> ResetPassword(AdminResetPasswordModel adminResetPasswordModel)
         {
-            return Ok(await _registerLoginService.UserRegistration(userDetails));
+            return Ok(await _registerLoginService.ResetPasswordAsync(adminResetPasswordModel));
+        }
+
+        [AllowAnonymous]
+        [Route("ForgotPassword")]
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPassword forgotPassword)
+        {
+            return Ok(await _registerLoginService.ForgotPassword(forgotPassword));
         }
 
         [Route("GetAllUser")]

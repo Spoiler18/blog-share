@@ -5,6 +5,9 @@ using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using MailKit.Net.Smtp;
+using MimeKit;
 
 namespace BlogApi.Services
 {
@@ -12,10 +15,12 @@ namespace BlogApi.Services
     {
         private readonly BlogContext _blogContext;
         private readonly IConfiguration _config;
-        public RegisterLoginService(BlogContext blogContext, IConfiguration config)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public RegisterLoginService(BlogContext blogContext, IConfiguration config, IHttpContextAccessor httpContextAccessor)
         {
             _blogContext = blogContext;
             _config = config;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ResponseModel> UserRegistration(UserDetails RegistrationData)
@@ -130,6 +135,98 @@ namespace BlogApi.Services
             }
             return null;
 
+        }
+
+        public async Task<ResponseModel> ForgotPassword(ForgotPassword userDetail)
+        {
+            ResponseModel response = new ResponseModel();
+
+            var resetToken = GeneratePasswordResetToken();
+            var url = _config.GetValue<string>("UIBaseUrl") + "/resetpassword";
+            var emailBody = $"To reset your password, click the following link: {url}?token={resetToken}";
+
+            var user = await _blogContext.UserDetail.Where(item => item.Email.ToLower() == userDetail.Email.ToLower() && item.IsDeleted != true).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                user.ResetToken = resetToken;
+                _blogContext.UserDetail.Update(user);
+                await SendEmailAsync(userDetail.Email, "Password Reset Request", emailBody);
+
+                response.isError = false;
+                response.isSuccess = true;
+                response.message = "Email Sent Successfully";
+            }
+            else
+            {
+                response.isError = true;
+                response.isSuccess = false;
+                response.message = "User not found";
+            }
+            await _blogContext.SaveChangesAsync();
+            
+            return response;
+        }
+
+        public async Task<ResponseModel> ResetPasswordAsync(AdminResetPasswordModel adminResetPasswordModel)
+        {
+            ResponseModel retval = new ResponseModel();
+            UserDetails? user = await _blogContext.UserDetail.Where(x => x.ResetToken == adminResetPasswordModel.ResetToken).FirstOrDefaultAsync();
+
+            if (user != null)
+            {
+                user.Password = CreatePasswordHash(adminResetPasswordModel.Password, user.SaltKey);
+                user.ModifiedBy = user.UserId;
+                user.ModifiedOn = DateTime.UtcNow;
+
+                _blogContext.UserDetail.Update(user);
+                await _blogContext.SaveChangesAsync();
+
+                retval.errorMessage = "";
+                retval.isError = false;
+                retval.isSuccess = true;
+
+                return retval;
+            }
+            else
+            {
+                retval.errorMessage = "Something Wrong";
+                retval.isError = true;
+                retval.isSuccess = false;
+                return retval;
+            }
+        }
+
+        private static string GeneratePasswordResetToken(int length = 32)
+        {
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(length))
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .TrimEnd('=');
+        }
+
+        public async Task SendEmailAsync(string? Email, string? Subject, string? emailBody)
+        {
+            var email = new MimeMessage();
+
+            email.From.Add(new MailboxAddress("Sender Name", "kaustub.762419@gmail.com"));
+            email.To.Add(new MailboxAddress("Receiver Name", Email));
+
+            email.Subject = Subject;
+            email.Body = new TextPart(MimeKit.Text.TextFormat.Html)
+            {
+                Text = emailBody
+            };
+
+            using (var smtp = new SmtpClient())
+            {
+                smtp.Connect("smtp.gmail.com", 587, false);
+
+                smtp.Authenticate("kaustub.762419@gmail.com", "diao xshy hpwu cnqo");
+
+                smtp.Send(email);
+                smtp.Disconnect(true);
+            }
+            
         }
     }
 }

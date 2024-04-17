@@ -13,6 +13,7 @@
         public string? ContactNumber { get; set; }
         public Guid SaltKey { get; set; }
         public string? Password { get; set; }
+        public string? ResetToken { get; set; }
     }
 
     public class LoginDetail
@@ -38,5 +39,11 @@
     {
         public string Email { get; set; }
         public string ResetToken { get; set; }
+    }
+
+    public partial class AdminResetPasswordModel
+    {
+        public string ResetToken { get; set; }
+        public string? Password { get; set; }
     }
 }
