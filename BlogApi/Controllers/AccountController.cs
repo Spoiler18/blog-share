@@ -28,6 +28,14 @@ namespace BlogApi.Controllers
         }
 
         [AllowAnonymous]
+        [Route("Register")]
+        [HttpPost]
+        public async Task<IActionResult> UserRegistration(UserDetails userDetails)
+        {
+            return Ok(await _registerLoginService.UserRegistration(userDetails));
+        }
+
+        [AllowAnonymous]
         [Route("ResetPassword")]
         [HttpPost]
         public async Task<IActionResult> ResetPassword(AdminResetPasswordModel adminResetPasswordModel)
