@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using MailKit.Net.Smtp;
 using MimeKit;
+using static Azure.Core.HttpHeader;
 
 namespace BlogApi.Services
 {
@@ -42,6 +43,8 @@ namespace BlogApi.Services
                         DateOfBirth = RegistrationData.DateOfBirth,
                         ContactNumber = RegistrationData.ContactNumber,
                         SaltKey = Guid.NewGuid(),
+                        CreatedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext),
+                        CreatedOn = DateTime.UtcNow
                     };
 
                     User.Password = CreatePasswordHash(RegistrationData.Password, User.SaltKey);
@@ -142,7 +145,7 @@ namespace BlogApi.Services
             ResponseModel response = new ResponseModel();
 
             var resetToken = GeneratePasswordResetToken();
-            var url = _config.GetValue<string>("UIBaseUrl") + "/resetpassword";
+            var url = _config.GetValue<string>("UIBaseUrl") + "/account/resetpassword";
             var emailBody = $"To reset your password, click the following link: {url}?token={resetToken}";
 
             var user = await _blogContext.UserDetail.Where(item => item.Email.ToLower() == userDetail.Email.ToLower() && item.IsDeleted != true).FirstOrDefaultAsync();
@@ -227,6 +230,36 @@ namespace BlogApi.Services
                 smtp.Disconnect(true);
             }
             
+        }
+
+        public async Task<ResponseModel> ChangePassword(ChangePassword userDetail)
+        {
+            UserDetails? user = await _blogContext.UserDetail.Where(x => x.UserId == userDetail.UserId && x.IsDeleted != true).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                string currentPasswordHash = CreatePasswordHash(userDetail.CurrentPassword, user.SaltKey);
+                if (user.Password != currentPasswordHash)
+                {
+                    ResponseModel errorResult = new ResponseModel
+                    {
+                        isError = true,
+                        errorMessage = "Current Password Not Matched!"
+                    };
+                    return errorResult;
+                }
+                user.Password = CreatePasswordHash(userDetail.Password, user.SaltKey);
+                user.ModifiedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext);
+                user.ModifiedOn = DateTime.UtcNow;
+                _blogContext.UserDetail.Update(user);
+            }
+            await _blogContext.SaveChangesAsync();
+
+            ResponseModel response = new ResponseModel
+            {
+                isSuccess = true,
+                message = "Password Change Successfully"
+            };
+            return response;
         }
     }
 }

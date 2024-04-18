@@ -17,29 +17,36 @@ namespace BlogApi.Controllers
             _logger = logger;
         }
 
-        [Route("GetBlogsList")]
-        [HttpGet]
-        public async Task<IActionResult> GetBlogsList()
+        [Route("GetBlogsListForDashboard")]
+        [HttpGet,Authorize]
+        public async Task<IActionResult> GetBlogsListForDashboard()
         {
-            return Ok(await _blogService.GetBlogsList());
+            return Ok(await _blogService.GetBlogsListForDashboard());
+        }
+
+        [Route("GetBlogsListForBlogs")]
+        [HttpGet]
+        public async Task<IActionResult> GetBlogsListForBlogs()
+        {
+            return Ok(await _blogService.GetBlogsListForBlogs());
         }
 
         [Route("AddBlog")]
-        [HttpGet,Authorize]
+        [HttpPost,Authorize]
         public async Task<IActionResult> AddBlogAsync(BlogApplications blog)
         {
             return Ok(await _blogService.AddBlogAsync(blog));
         }
 
         [Route("EditBlog")]
-        [HttpGet,Authorize]
+        [HttpPost,Authorize]
         public async Task<IActionResult> EditBlogAsync(BlogApplications blog)
         {
             return Ok(await _blogService.EditBlogAsync(blog));
         }
 
-        [Route("DeleteBlog")]
-        [HttpGet, Authorize]
+        [Route("DeleteBlog/{blog}")]
+        [HttpDelete]
         public async Task<IActionResult> DeleteBlogAsync(int? blog)
         {
             return Ok(await _blogService.DeleteBlogAsync(blog));

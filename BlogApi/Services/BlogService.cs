@@ -13,10 +13,70 @@ namespace BlogApi.Services
             _httpContextAccessor = httpContextAccessor;
             _blogContext = blogContext;
         }
-        public async Task<List<BlogApplications>> GetBlogsList()
+        public async Task<List<DetailedBlogApplications>> GetBlogsListForDashboard()
         {
-            var data = await _blogContext.BlogApplication.ToListAsync();
-            return data;
+            bool isAdmin = false;
+            try
+            {
+                isAdmin = await _blogContext.UserDetail.Where(item => item.UserId == CommonService.GetUserId(_httpContextAccessor.HttpContext)).Select(item => item.IsAdmin).FirstOrDefaultAsync();
+            }
+            catch (Exception ex) { }
+
+            List<DetailedBlogApplications> data = new List<DetailedBlogApplications>(); 
+
+            if (isAdmin)
+            {
+                data = (from blog in _blogContext.BlogApplication
+                        join user in _blogContext.UserDetail
+                        on blog.UserId equals user.UserId
+                        where blog.IsDeleted != true
+                        select new DetailedBlogApplications
+                        {
+                            BlogId = blog.BlogId,
+                            BlogTitle = blog.BlogTitle,
+                            BlogDescription = blog.BlogDescription,
+                            FullName = user.FirstName + " " + user.LastName,
+                            UserId = blog.UserId,
+                        }).ToList();
+            }
+            else
+            {
+                data = (from blog in _blogContext.BlogApplication
+                        join user in _blogContext.UserDetail
+                        on blog.UserId equals user.UserId
+                        where blog.IsDeleted != true && blog.UserId == CommonService.GetUserId(_httpContextAccessor.HttpContext)
+                        select new DetailedBlogApplications
+                        {
+                            BlogId = blog.BlogId,
+                            BlogTitle = blog.BlogTitle,
+                            BlogDescription = blog.BlogDescription,
+                            FullName = user.FirstName + " " + user.LastName,
+                            UserId = blog.UserId,
+                        }).ToList();
+            }
+            
+
+            return data.ToList();
+        }
+
+        public async Task<List<DetailedBlogApplications>> GetBlogsListForBlogs()
+        {
+            List<DetailedBlogApplications> data = new List<DetailedBlogApplications>();
+
+            data = (from blog in _blogContext.BlogApplication
+                    join user in _blogContext.UserDetail
+                    on blog.UserId equals user.UserId
+                    where blog.IsDeleted != true
+                    select new DetailedBlogApplications
+                    {
+                        BlogId = blog.BlogId,
+                        BlogTitle = blog.BlogTitle,
+                        BlogDescription = blog.BlogDescription,
+                        FullName = user.FirstName + " " + user.LastName,
+                        UserId = blog.UserId,
+                    }).ToList();
+
+            return data.ToList();
         }
 
         public async Task<ResponseModel> AddBlogAsync(BlogApplications blogApplications)

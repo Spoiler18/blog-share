@@ -8,5 +8,6 @@ namespace BlogApi.Services
         Task<SessionDetails> UserLogin(LoginDetail LoginData);
         Task<ResponseModel> ResetPasswordAsync(AdminResetPasswordModel adminResetPasswordModel);
         Task<ResponseModel> ForgotPassword(ForgotPassword? userDetail);
+        Task<ResponseModel> ChangePassword(ChangePassword userDetail);
     }
 }

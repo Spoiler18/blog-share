@@ -51,6 +51,13 @@ namespace BlogApi.Controllers
             return Ok(await _registerLoginService.ForgotPassword(forgotPassword));
         }
 
+        [Route("ChangePassword")]
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePassword changePassword)
+        {
+            return Ok(await _registerLoginService.ChangePassword(changePassword));
+        }
+
         [Route("GetAllUser")]
         [HttpPost,Authorize]
         public async Task<IActionResult> GetAllUsers()
