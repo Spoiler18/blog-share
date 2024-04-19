@@ -31,6 +31,13 @@ namespace BlogApi.Controllers
             return Ok(await _blogService.GetBlogsListForBlogs());
         }
 
+        [Route("GetBlogDetail/{id}")]
+        [HttpGet]
+        public async Task<IActionResult> GetBlogDetail(int? id)
+        {
+            return Ok(await _blogService.GetBlogDetail(id));
+        }
+
         [Route("AddBlog")]
         [HttpPost,Authorize]
         public async Task<IActionResult> AddBlogAsync(BlogApplications blog)

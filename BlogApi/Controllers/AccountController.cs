@@ -59,14 +59,14 @@ namespace BlogApi.Controllers
         }
 
         [Route("GetAllUser")]
-        [HttpPost,Authorize]
+        [HttpGet,Authorize]
         public async Task<IActionResult> GetAllUsers()
         {
             return Ok(await _accountService.GetAllUsers());
         }
 
         [Route("GetSingleUser")]
-        [HttpPost, Authorize]
+        [HttpGet, Authorize]
         public async Task<IActionResult> GetSingleUser(int? userId)
         {
             return Ok(await _accountService.GetSingleUser(userId));

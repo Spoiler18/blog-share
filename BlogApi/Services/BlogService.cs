@@ -79,6 +79,24 @@ namespace BlogApi.Services
             return data.ToList();
         }
 
+        public async Task<DetailedBlogApplications> GetBlogDetail(int? id)
+        {
+            var data = (from blog in _blogContext.BlogApplication
+                    join user in _blogContext.UserDetail
+                    on blog.UserId equals user.UserId
+                    where blog.IsDeleted != true && blog.BlogId == id
+                    select new DetailedBlogApplications
+                    {
+                        BlogId = blog.BlogId,
+                        BlogTitle = blog.BlogTitle,
+                        BlogDescription = blog.BlogDescription,
+                        FullName = user.FirstName + " " + user.LastName,
+                        UserId = blog.UserId,
+                    }).FirstOrDefault();
+
+            return data;
+        }
+
         public async Task<ResponseModel> AddBlogAsync(BlogApplications blogApplications)
         {
             ResponseModel response = new ResponseModel();
