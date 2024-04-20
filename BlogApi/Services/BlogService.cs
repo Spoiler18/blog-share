@@ -1,5 +1,7 @@
 ﻿using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Reflection.Metadata;
 using static Azure.Core.HttpHeader;
 
 namespace BlogApi.Services
@@ -8,10 +10,14 @@ namespace BlogApi.Services
     {
         private readonly BlogContext _blogContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public BlogService(BlogContext blogContext, IHttpContextAccessor httpContextAccessor) 
+        private readonly IBlogReactionService _blogReactionService;
+        private readonly ICommentService _commentService;
+        public BlogService(BlogContext blogContext, IHttpContextAccessor httpContextAccessor, IBlogReactionService blogReactionService, ICommentService commentService)
         {
             _httpContextAccessor = httpContextAccessor;
             _blogContext = blogContext;
+            _blogReactionService = blogReactionService;
+            _commentService = commentService;
         }
         public async Task<List<DetailedBlogApplications>> GetBlogsListForDashboard()
         {
@@ -22,7 +28,7 @@ namespace BlogApi.Services
             }
             catch (Exception ex) { }
 
-            List<DetailedBlogApplications> data = new List<DetailedBlogApplications>(); 
+            List<DetailedBlogApplications> data = new List<DetailedBlogApplications>();
 
             if (isAdmin)
             {
@@ -54,7 +60,7 @@ namespace BlogApi.Services
                             UserId = blog.UserId,
                         }).ToList();
             }
-            
+
 
             return data.ToList();
         }
@@ -64,8 +70,7 @@ namespace BlogApi.Services
             List<DetailedBlogApplications> data = new List<DetailedBlogApplications>();
 
             data = (from blog in _blogContext.BlogApplication
-                    join user in _blogContext.UserDetail
-                    on blog.UserId equals user.UserId
+                    join user in _blogContext.UserDetail on blog.UserId equals user.UserId
                     where blog.IsDeleted != true
                     select new DetailedBlogApplications
                     {
@@ -81,20 +86,27 @@ namespace BlogApi.Services
 
         public async Task<DetailedBlogApplications> GetBlogDetail(int? id)
         {
-            var data = (from blog in _blogContext.BlogApplication
-                    join user in _blogContext.UserDetail
-                    on blog.UserId equals user.UserId
-                    where blog.IsDeleted != true && blog.BlogId == id
-                    select new DetailedBlogApplications
-                    {
-                        BlogId = blog.BlogId,
-                        BlogTitle = blog.BlogTitle,
-                        BlogDescription = blog.BlogDescription,
-                        FullName = user.FirstName + " " + user.LastName,
-                        UserId = blog.UserId,
-                    }).FirstOrDefault();
+            var blogReaction = await _blogReactionService.GetBlogReaction(id);
+            var blogComment = await _commentService.GetBlogComments(id);
 
-            return data;
+            var blogDetail = (from blog in _blogContext.BlogApplication
+                              join user in _blogContext.UserDetail on blog.UserId equals user.UserId
+                              join img in _blogContext.BlogImages.AsEnumerable() on blog.BlogId equals img.BlogId into images
+                              where blog.BlogId == id
+                              select new DetailedBlogApplications
+                              {
+                                  BlogId = blog.BlogId,
+                                  BlogTitle = blog.BlogTitle,
+                                  BlogDescription = blog.BlogDescription,
+                                  FullName = user.FirstName + " " + user.LastName,
+                                  UserId = blog.UserId,
+                                  BlogImages = images.ToList()
+                              }).FirstOrDefault();
+
+            blogDetail.BlogReactions = blogReaction;
+            blogDetail.BlogComments = blogComment;
+
+            return blogDetail;
         }
 
         public async Task<ResponseModel> AddBlogAsync(BlogApplications blogApplications)
@@ -102,7 +114,7 @@ namespace BlogApi.Services
             ResponseModel response = new ResponseModel();
 
             BlogApplications blog = new BlogApplications
-            { 
+            {
                 UserId = blogApplications.UserId,
                 BlogTitle = blogApplications.BlogTitle?.Trim(),
                 BlogDescription = blogApplications.BlogDescription?.Trim(),
@@ -110,9 +122,9 @@ namespace BlogApi.Services
                 CreatedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext),
             };
 
-            try 
+            try
             {
-                if(_blogContext.BlogApplication.Any(item => item.BlogTitle == blogApplications.BlogTitle))
+                if (_blogContext.BlogApplication.Any(item => item.BlogTitle == blogApplications.BlogTitle))
                 {
                     response.isError = true;
                     response.isSuccess = false;
@@ -128,7 +140,7 @@ namespace BlogApi.Services
                     response.message = "Blog Added Successfully!!!";
                 }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 response.isError = true;
                 response.isSuccess = false;
@@ -145,10 +157,10 @@ namespace BlogApi.Services
             try
             {
                 BlogApplications? editBlog = await _blogContext.BlogApplication.Where(item => item.BlogId == blogApplications.BlogId && item.IsDeleted != true).FirstOrDefaultAsync();
-            
-                if(editBlog != null )
+
+                if (editBlog != null)
                 {
-                    if(!_blogContext.BlogApplication.Any(item => item.BlogTitle == blogApplications.BlogTitle && item.BlogId != blogApplications.BlogId && item.IsDeleted != true))
+                    if (!_blogContext.BlogApplication.Any(item => item.BlogTitle == blogApplications.BlogTitle && item.BlogId != blogApplications.BlogId && item.IsDeleted != true))
                     {
                         editBlog.BlogTitle = blogApplications.BlogTitle;
                         editBlog.BlogDescription = blogApplications.BlogDescription;

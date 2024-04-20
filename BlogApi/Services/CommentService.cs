@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services
 {
-    public class CommentService
+    public class CommentService : ICommentService
     {
         private readonly BlogContext _blogContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -16,7 +16,7 @@ namespace BlogApi.Services
 
         public async Task<List<DetailedComment>> GetBlogComments(int? blogId)
         {
-            var data = (from comments in _blogContext.Comments
+            var data = (from comments in _blogContext.BlogComments
                         join user in _blogContext.UserDetail
                         on comments.UserId equals user.UserId
                         where comments.BlogId == blogId && comments.IsDeleted != true
@@ -27,9 +27,24 @@ namespace BlogApi.Services
                             BlogId = comments.BlogId,
                             UserComment = comments.UserComment,
                             ReplyToCommentId = comments.ReplyToCommentId,
-                            UserFirstName = user.FirstName,
-                            UserLastName = user.LastName,
+                            UserCommentFullName = user.FirstName + " " + user.LastName,
                         }).ToList();
+
+            Parallel.ForEach(data, item =>
+            {
+                item.CommentReactions = (from CommentReactions in _blogContext.CommentReactions
+                                         join user in _blogContext.UserDetail
+                                         on CommentReactions.UserId equals user.UserId
+                                         where CommentReactions.CommentId == item.CommentId
+                                         select new DetailedCommentReaction
+                                         {
+                                             CommentReactionId = CommentReactions.CommentReactionId,
+                                             CommentId = CommentReactions.CommentId,
+                                             UserId= user.UserId,
+                                             UserReaction = CommentReactions.UserReaction,
+                                             UserCommentReactionFullName = user.FirstName + " " + user.LastName
+                                         }).ToList();
+            });
 
             return data;
         }
@@ -52,7 +67,7 @@ namespace BlogApi.Services
 
                 try
                 {
-                    _blogContext.Comments.Add(newComment);
+                    _blogContext.BlogComments.Add(newComment);
                     await _blogContext.SaveChangesAsync();
 
                     response.isError = false;
@@ -83,7 +98,7 @@ namespace BlogApi.Services
 
             try
             {
-                BlogComment? editComment = await _blogContext.Comments.Where(item => item.CommentId == comment.CommentId && item.IsDeleted != true).FirstOrDefaultAsync();
+                BlogComment? editComment = await _blogContext.BlogComments.Where(item => item.CommentId == comment.CommentId && item.IsDeleted != true).FirstOrDefaultAsync();
 
                 if (editComment != null)
                 {
@@ -91,7 +106,7 @@ namespace BlogApi.Services
                     editComment.ModifiedOn = DateTime.Now;
                     editComment.ModifiedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext);
 
-                    _blogContext.Comments.Update(editComment);
+                    _blogContext.BlogComments.Update(editComment);
                     await _blogContext.SaveChangesAsync();
 
                     response.isError = false;
@@ -121,14 +136,14 @@ namespace BlogApi.Services
 
             try
             {
-                BlogComment? comment = await _blogContext.Comments.Where(x => x.CommentId == commentId && x.IsDeleted != true).FirstOrDefaultAsync();
+                BlogComment? comment = await _blogContext.BlogComments.Where(x => x.CommentId == commentId && x.IsDeleted != true).FirstOrDefaultAsync();
                 if (comment != null)
                 {
                     comment.IsDeleted = true;
                     comment.ModifiedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext);
                     comment.ModifiedOn = DateTime.UtcNow;
 
-                    _blogContext.Comments.Update(comment);
+                    _blogContext.BlogComments.Update(comment);
                     await _blogContext.SaveChangesAsync();
 
                     response.isError = false;

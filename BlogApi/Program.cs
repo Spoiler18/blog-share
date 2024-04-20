@@ -43,8 +43,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IBlogService, BlogService>();
-builder.Services.AddScoped<IRegisterLoginService, RegisterLoginService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IRegisterLoginService, RegisterLoginService>();
+builder.Services.AddScoped<IBlogReactionService, BlogReactionsService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ICommentReactionService, CommentReactionsService>();
 
 var app = builder.Build();
 

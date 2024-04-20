@@ -12,8 +12,8 @@
 
     public class DetailedComment : BlogComment
     {
-        public string? UserFirstName { get; set; }
-        public string? UserLastName { get; set; }
+        public string? UserCommentFullName { get; set; }
+        public IEnumerable<DetailedCommentReaction> CommentReactions { get; set; }
     }
 
     public class BlogReaction : BaseModel
@@ -26,8 +26,7 @@
 
     public class DetailedReaction : BlogReaction
     {
-        public string? UserFirstName { get; set; }
-        public string? UserLastName { get; set; }
+        public string? UserReactionFullName { get; set; }
     }
 
     public class CommentReaction : BaseModel
@@ -37,4 +36,10 @@
         public int? UserId { get; set; }
         public int? UserReaction { get; set; }
     }
+
+    public class DetailedCommentReaction : CommentReaction
+    {
+        public string? UserCommentReactionFullName { get; set; }
+    }
+
 }

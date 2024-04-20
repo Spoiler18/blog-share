@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services
 {
-    public class BlogReactionsService
+    public class BlogReactionsService : IBlogReactionService
     {
         private readonly BlogContext _blogContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -15,7 +15,7 @@ namespace BlogApi.Services
 
         public async Task<List<DetailedReaction>> GetBlogReaction(int? blogId)
         {
-            var data = (from reactions in _blogContext.Reactions
+            var data = (from reactions in _blogContext.BlogReactions
                         join user in _blogContext.UserDetail
                         on reactions.UserId equals user.UserId
                         where reactions.BlogId == blogId
@@ -25,8 +25,7 @@ namespace BlogApi.Services
                             UserId = reactions.UserId,
                             BlogId = reactions.BlogId,
                             UserReaction = reactions.UserReaction,
-                            UserFirstName = user.FirstName,
-                            UserLastName = user.LastName,
+                            UserReactionFullName = user.FirstName + " " + user.LastName,
                         }).ToList();
 
             return data;
@@ -49,7 +48,7 @@ namespace BlogApi.Services
 
                 try
                 {
-                    _blogContext.Reactions.Add(newReaction);
+                    _blogContext.BlogReactions.Add(newReaction);
                     await _blogContext.SaveChangesAsync();
 
                     response.isError = false;
@@ -80,7 +79,7 @@ namespace BlogApi.Services
 
             try
             {
-                BlogReaction? editReaction = await _blogContext.Reactions.Where(item => item.ReactionId == reaction.ReactionId).FirstOrDefaultAsync();
+                BlogReaction? editReaction = await _blogContext.BlogReactions.Where(item => item.ReactionId == reaction.ReactionId).FirstOrDefaultAsync();
 
                 if (editReaction != null)
                 {
@@ -88,7 +87,7 @@ namespace BlogApi.Services
                     editReaction.ModifiedOn = DateTime.Now;
                     editReaction.ModifiedBy = CommonService.GetUserId(_httpContextAccessor.HttpContext);
 
-                    _blogContext.Reactions.Update(editReaction);
+                    _blogContext.BlogReactions.Update(editReaction);
                     await _blogContext.SaveChangesAsync();
 
                     response.isError = false;
@@ -118,8 +117,8 @@ namespace BlogApi.Services
 
             try
             {
-                var reaction = await _blogContext.Reactions.Where(reaction => reaction.ReactionId == reactionId).FirstOrDefaultAsync();
-                _blogContext.Reactions.Remove(reaction);
+                var reaction = await _blogContext.BlogReactions.Where(reaction => reaction.ReactionId == reactionId).FirstOrDefaultAsync();
+                _blogContext.BlogReactions.Remove(reaction);
                 await _blogContext.SaveChangesAsync();
 
                 response.isError = false;

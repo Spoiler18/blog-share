@@ -12,9 +12,10 @@ namespace BlogApi.Models
         }
         public virtual DbSet<BlogApplications> BlogApplication { get; set; }
         public virtual DbSet<UserDetails> UserDetail { get; set; }
-        public virtual DbSet<BlogComment> Comments { get; set; }
-        public virtual DbSet<BlogReaction> Reactions { get; set; }
+        public virtual DbSet<BlogComment> BlogComments { get; set; }
+        public virtual DbSet<BlogReaction> BlogReactions { get; set; }
         public virtual DbSet<CommentReaction> CommentReactions { get; set; }
+        public virtual DbSet<BlogImage> BlogImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +37,10 @@ namespace BlogApi.Models
 
             modelBuilder.Entity<CommentReaction>(entity => {
                 entity.HasKey(k => k.CommentReactionId);
+            });
+
+            modelBuilder.Entity<BlogImage>(entity => {
+                entity.HasKey(k => k.ImageId);
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services
 {
-    public class CommentReactionsService
+    public class CommentReactionsService : ICommentReactionService
     {
         private readonly BlogContext _blogContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -11,6 +11,24 @@ namespace BlogApi.Services
         {
             _httpContextAccessor = httpContextAccessor;
             _blogContext = blogContext;
+        }
+
+        public async Task<List<DetailedCommentReaction>> GetBlogCommentReactions(int? CommentId)
+        {
+            var data = (from commentReactions in _blogContext.CommentReactions
+                        join user in _blogContext.UserDetail
+                        on commentReactions.UserId equals user.UserId
+                        where commentReactions.CommentId == CommentId
+                        select new DetailedCommentReaction
+                        {
+                            CommentReactionId = commentReactions.CommentReactionId,
+                            CommentId = commentReactions.CommentId,
+                            UserId = commentReactions.UserId,
+                            UserReaction = commentReactions.UserReaction,
+                            UserCommentReactionFullName = user.FirstName + " " + user.LastName,
+                        }).ToList();
+
+            return data;
         }
 
         public async Task<ResponseModel> AddCommentReaction(CommentReaction commentReaction)
