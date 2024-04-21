@@ -16,24 +16,28 @@ namespace BlogApi.Services
 
         public async Task<List<DetailedComment>> GetBlogComments(int? blogId)
         {
-            var data = (from comments in _blogContext.BlogComments
-                        join user in _blogContext.UserDetail
-                        on comments.UserId equals user.UserId
-                        where comments.BlogId == blogId && comments.IsDeleted != true
-                        select new DetailedComment
-                        {
-                            CommentId = comments.CommentId,
-                            UserId = comments.UserId,
-                            BlogId = comments.BlogId,
-                            UserComment = comments.UserComment,
-                            ReplyToCommentId = comments.ReplyToCommentId,
-                            UserCommentFullName = user.FirstName + " " + user.LastName,
-                        }).ToList();
+            var userData = await _blogContext.UserDetail.ToListAsync();
+            var commentData = await _blogContext.BlogComments.Where(item => item.BlogId == blogId).ToListAsync();
+            var commentReactionData = await _blogContext.CommentReactions.Where(item => commentData.Select(item => item.CommentId).ToList().Contains(((int)item.CommentId))).ToListAsync();
+
+            var data = (from comment in commentData
+                       join user in userData
+                       on comment.UserId equals user.UserId
+                       where comment.BlogId == blogId && comment.IsDeleted != true
+                       select new DetailedComment
+                       {
+                           CommentId = comment.CommentId,
+                           UserId = comment.UserId,
+                           BlogId = comment.BlogId,
+                           UserComment = comment.UserComment,
+                           ReplyToCommentId = comment.ReplyToCommentId,
+                           UserCommentFullName = user.FirstName + " " + user.LastName,
+                       }).ToList();
 
             Parallel.ForEach(data, item =>
             {
-                item.CommentReactions = (from CommentReactions in _blogContext.CommentReactions
-                                         join user in _blogContext.UserDetail
+                item.CommentReactions = (from CommentReactions in commentReactionData
+                                         join user in userData
                                          on CommentReactions.UserId equals user.UserId
                                          where CommentReactions.CommentId == item.CommentId
                                          select new DetailedCommentReaction
