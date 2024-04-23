@@ -87,6 +87,7 @@ namespace BlogApi.Services
                     sd.firstName = user?.FirstName ?? "";
                     sd.lastName = user?.LastName ?? "";
                     sd.userRoleId = user.IsAdmin;
+                    sd.IsDeactivated = user.IsDeactivated;
                 }
                 else
                 {

@@ -16,5 +16,6 @@
         public string? firstName { get; set; }
         public string? lastName { get; set; }
         public bool? userRoleId { get; set; }
+        public bool? IsDeactivated { get; set; }
     }
 }

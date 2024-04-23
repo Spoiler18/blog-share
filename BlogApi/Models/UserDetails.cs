@@ -8,6 +8,7 @@
         public string Email { get; set; }
         public int? Gender { get; set; }
         public bool IsAdmin { get; set; }
+        public bool? IsDeactivated { get; set; }
         public bool? IsDeleted { get; set; }
         public DateTime DateOfBirth { get; set; }
         public string? ContactNumber { get; set; }

@@ -65,11 +65,32 @@ namespace BlogApi.Controllers
             return Ok(await _accountService.GetAllUsers());
         }
 
-        [Route("GetSingleUser")]
+        [Route("GetSingleUser/{userId}")]
         [HttpGet, Authorize]
         public async Task<IActionResult> GetSingleUser(int? userId)
         {
             return Ok(await _accountService.GetSingleUser(userId));
+        }
+
+        [Route("EditUser")]
+        [HttpPost, Authorize]
+        public async Task<IActionResult> EditUser(UserDetails user)
+        {
+            return Ok(await _accountService.EditUserAsync(user));
+        }
+
+        [Route("DeactivateUser/{user}")]
+        [HttpGet, Authorize]
+        public async Task<IActionResult> DeactivateUser(int? user)
+        {
+            return Ok(await _accountService.DeactivateUserAsync(user));
+        }
+
+        [Route("ReactivateUser/{user}")]
+        [HttpGet]
+        public async Task<IActionResult> ReactivateUser(int? user)
+        {
+            return Ok(await _accountService.ReactivateUserAsync(user));
         }
     }
 }
