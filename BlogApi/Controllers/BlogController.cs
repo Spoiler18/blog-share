@@ -40,14 +40,14 @@ namespace BlogApi.Controllers
 
         [Route("AddBlog")]
         [HttpPost,Authorize]
-        public async Task<IActionResult> AddBlogAsync(BlogApplications blog)
+        public async Task<IActionResult> AddBlogAsync(AddEditBlogApplications blog)
         {
             return Ok(await _blogService.AddBlogAsync(blog));
         }
 
         [Route("EditBlog")]
         [HttpPost,Authorize]
-        public async Task<IActionResult> EditBlogAsync(BlogApplications blog)
+        public async Task<IActionResult> EditBlogAsync(AddEditBlogApplications blog)
         {
             return Ok(await _blogService.EditBlogAsync(blog));
         }

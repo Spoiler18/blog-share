@@ -7,8 +7,8 @@ namespace BlogApi.Services
         Task<List<DetailedBlogApplications>> GetBlogsListForDashboard();
         Task<List<DetailedBlogApplications>> GetBlogsListForBlogs();
         Task<DetailedBlogApplications> GetBlogDetail(int? id);
-        Task<ResponseModel> AddBlogAsync(BlogApplications blogApplications);
-        Task<ResponseModel> EditBlogAsync(BlogApplications blogApplications);
+        Task<ResponseModel> AddBlogAsync(AddEditBlogApplications blogApplications);
+        Task<ResponseModel> EditBlogAsync(AddEditBlogApplications blogApplications);
         Task<ResponseModel> DeleteBlogAsync(int? blogApplicationId);
     }
 }
