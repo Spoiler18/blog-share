@@ -43,6 +43,7 @@ namespace BlogApi.Services
                             BlogId = blog.BlogId,
                             BlogTitle = blog.BlogTitle,
                             BlogDescription = blog.BlogDescription,
+                            CreatedOn = blog.CreatedOn,
                             FullName = user.FirstName + " " + user.LastName,
                             UserId = blog.UserId,
                         }).ToList();
@@ -57,6 +58,7 @@ namespace BlogApi.Services
                             BlogId = blog.BlogId,
                             BlogTitle = blog.BlogTitle,
                             BlogDescription = blog.BlogDescription,
+                            CreatedOn = blog.CreatedOn,
                             FullName = user.FirstName + " " + user.LastName,
                             UserId = blog.UserId,
                         }).ToList();
@@ -99,9 +101,40 @@ namespace BlogApi.Services
                         BlogId = blog.BlogId,
                         BlogTitle = blog.BlogTitle,
                         BlogDescription = blog.BlogDescription,
+                        CreatedOn = blog.CreatedOn,
                         FullName = user.FirstName + " " + user.LastName,
                         UserId = blog.UserId,
                     }).ToList();
+
+            foreach (var blog in data)
+            {
+                var images = await _blogContext.BlogImages
+                    .Where(img => img.BlogId == blog.BlogId && img.IsDeleted != true)
+                    .ToListAsync();
+
+                List<BlogImageDetailed> detailedImages = images.Select(img => new BlogImageDetailed
+                {
+                    ImageId = img.ImageId,
+                    BlogId = img.BlogId,
+                    ImagePath = img.ImagePath,
+                }).ToList();
+
+                Parallel.ForEach(detailedImages, img =>
+                {
+                    img.ImageBytes = ReadLocalImageAsByteArray(img.ImagePath).Result;
+                });
+
+                blog.BlogImages = detailedImages;
+
+                var blogReaction = await _blogReactionService.GetBlogReaction(blog.BlogId);
+                var blogComment = await _commentService.GetBlogComments(blog.BlogId);
+
+                var upvotes = blogReaction.Where(item => item.UserReaction == 1).Count();
+                var downvotes = blogReaction.Where(item => item.UserReaction == 2).Count();
+                var comments = blogComment.Count();
+
+                blog.Popularity = 2 * upvotes - downvotes + comments;
+            }
 
             return data.ToList();
         }
@@ -222,40 +255,43 @@ namespace BlogApi.Services
 
                     var _imageFolderPath = _configuration["ImagePath"];
 
-                    foreach (var image in blogApplications.BlogImages)
+                    if(blogApplications.BlogImages != null)
                     {
-                        string imageName = $"{blog.BlogId}_image_{Guid.NewGuid()}.jpg";
-                        string imagePath = Path.Combine(_imageFolderPath, imageName);
+                        foreach (var image in blogApplications.BlogImages)
+                        {
+                            string imageName = $"{blog.BlogId}_image_{Guid.NewGuid()}.jpg";
+                            string imagePath = Path.Combine(_imageFolderPath, imageName);
+
+                            try
+                            {
+                                await File.WriteAllBytesAsync(imagePath, image.ImageBytes);
+                                imageUrls.Add(imagePath);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Handle or log the exception
+                                Console.WriteLine($"Error saving image: {ex.Message}");
+                            }
+                        }
+
+                        // Create BlogImage entities for database insertion
+                        List<BlogImage> blogImages = imageUrls.Select(url => new BlogImage
+                        {
+                            BlogId = blog.BlogId,
+                            ImagePath = url
+                        }).ToList();
 
                         try
                         {
-                            await File.WriteAllBytesAsync(imagePath, image.ImageBytes);
-                            imageUrls.Add(imagePath);
+                            // Add BlogImage entities to the database
+                            _blogContext.BlogImages.AddRange(blogImages);
+                            await _blogContext.SaveChangesAsync();
                         }
                         catch (Exception ex)
                         {
                             // Handle or log the exception
-                            Console.WriteLine($"Error saving image: {ex.Message}");
+                            Console.WriteLine($"Error saving BlogImages to the database: {ex.Message}");
                         }
-                    }
-
-                    // Create BlogImage entities for database insertion
-                    List<BlogImage> blogImages = imageUrls.Select(url => new BlogImage
-                    {
-                        BlogId = blog.BlogId,
-                        ImagePath = url
-                    }).ToList();
-
-                    try
-                    {
-                        // Add BlogImage entities to the database
-                        _blogContext.BlogImages.AddRange(blogImages);
-                        await _blogContext.SaveChangesAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Handle or log the exception
-                        Console.WriteLine($"Error saving BlogImages to the database: {ex.Message}");
                     }
                 }
             }

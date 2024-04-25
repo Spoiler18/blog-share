@@ -19,6 +19,7 @@
     {
         public string? FullName { get; set; }
         public bool? IsDeleted { get; set; }
+        public int? Popularity { get; set; }
         public List<BlogImageDetailed>? BlogImages { get; set; }
         public IEnumerable<DetailedReaction>? BlogReactions { get; set; }
         public IEnumerable<DetailedComment>? BlogComments { get; set; }
