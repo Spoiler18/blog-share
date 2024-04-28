@@ -1,9 +1,6 @@
 ﻿using BlogApi.Models;
+using BlogApi.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Reflection.Metadata;
-using static Azure.Core.HttpHeader;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace BlogApi.Services
 {
@@ -89,6 +86,43 @@ namespace BlogApi.Services
             return data.ToList();
         }
 
+        public async Task<List<Notifications>> GetUserNotifications(int? userId)
+        {
+            var notifications = new List<Notifications>();
+
+            var loginTime = await _blogContext.UserLogs.Where(item => item.UserId == userId).OrderByDescending(item => item.LoginTime).Select(item => item.LoginTime)
+                .FirstOrDefaultAsync();
+
+            var userBlogs = await _blogContext.BlogApplication.Where(item => item.UserId == userId && item.IsDeleted != true).Select(item => item.BlogId).ToListAsync();
+
+            var reactions = await (from reaction in _blogContext.BlogReactions
+                                   join user in _blogContext.UserDetail on reaction.UserId equals user.UserId
+                                   where userBlogs.Contains((int)reaction.BlogId) && reaction.CreatedOn >= loginTime
+                                   select new Notifications
+                                   {
+                                       BlogId = reaction.BlogId,
+                                       UserId = reaction.UserId,
+                                       UserFullName = user.FirstName + " " + user.LastName,
+                                       Message = user.FirstName + " " + user.LastName + " Reacted With '" + ((Reactions)reaction.UserReaction).ToString() + "'",
+                                   }).ToListAsync();
+
+            var comments = await (from reaction in _blogContext.BlogComments
+                                  join user in _blogContext.UserDetail on reaction.UserId equals user.UserId
+                                  where userBlogs.Contains((int)reaction.BlogId) && reaction.CreatedOn >= loginTime
+                                  select new Notifications
+                                  {
+                                      BlogId = reaction.BlogId,
+                                      UserId = reaction.UserId,
+                                      UserFullName = user.FirstName + " " + user.LastName,
+                                      Message = user.FirstName + " " + user.LastName + " Commented '" + reaction.UserComment + "'",
+                                  }).ToListAsync();
+
+            notifications.AddRange(reactions);
+            notifications.AddRange(comments);
+
+            return notifications;
+        }
+
         public async Task<List<DetailedBlogApplications>> GetBlogsListForBlogs()
         {
             List<DetailedBlogApplications> data = new List<DetailedBlogApplications>();
@@ -143,7 +177,7 @@ namespace BlogApi.Services
         {
             try
             {
-                
+
                 byte[] imageData = await File.ReadAllBytesAsync(imagePath);
                 return imageData;
             }
@@ -255,7 +289,7 @@ namespace BlogApi.Services
 
                     var _imageFolderPath = _configuration["ImagePath"];
 
-                    if(blogApplications.BlogImages != null)
+                    if (blogApplications.BlogImages != null)
                     {
                         foreach (var image in blogApplications.BlogImages)
                         {
@@ -422,6 +456,33 @@ namespace BlogApi.Services
             }
 
             return response;
+        }
+
+        public async Task<List<DetailedBlogApplications>> GetTopBlogs(bool Alltime,DateTime? fromDate, DateTime? toDate)
+        {
+            var blogs = await GetBlogsListForBlogs();
+            if(Alltime == true)
+            {
+                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).OrderBy(item => item.Popularity).Take(10).ToList();
+            }
+            else
+            {
+                return blogs.OrderBy(item => item.Popularity).Take(10).ToList();
+            }
+        }
+
+        // blogs added in a time frame or all time
+        public async Task<List<DetailedBlogApplications>> GetBlogSummary(bool Alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            var blogs = await GetBlogsListForBlogs();
+            if (Alltime == true)
+            {
+                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).ToList();
+            }
+            else
+            {
+                return blogs.ToList();
+            }
         }
     }
 }

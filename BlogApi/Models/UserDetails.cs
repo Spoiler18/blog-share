@@ -23,6 +23,15 @@
         public string? Password { get; set; }
     }
 
+    public class UserLog
+    {
+        public int LogId { get; set; }
+        public int? UserId { get; set; }
+        public DateTime? LoginTime { get; set; }
+    }
+
+    
+
     public partial class ChangePassword
     {
         public int UserId { get; set; }

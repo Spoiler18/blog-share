@@ -81,6 +81,15 @@ namespace BlogApi.Services
             {
                 if (user.Password == CreatePasswordHash(LoginData.Password, user.SaltKey))
                 {
+                    UserLog log = new UserLog
+                    {
+                        UserId = user.UserId,
+                        LoginTime = DateTime.Now,
+                    };
+
+                    _blogContext.UserLogs.Add(log);
+                    await _blogContext.SaveChangesAsync();
+
                     string token = GenerateToken(user);
                     sd.userId = user.UserId;
                     sd.tokenId = token;

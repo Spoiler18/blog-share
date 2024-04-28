@@ -10,5 +10,6 @@ namespace BlogApi.Services
         Task<ResponseModel> AddBlogAsync(AddEditBlogApplications blogApplications);
         Task<ResponseModel> EditBlogAsync(AddEditBlogApplications blogApplications);
         Task<ResponseModel> DeleteBlogAsync(int? blogApplicationId);
+        Task<List<Notifications>> GetUserNotifications(int? userId);
     }
 }

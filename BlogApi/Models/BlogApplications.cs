@@ -25,6 +25,14 @@
         public IEnumerable<DetailedComment>? BlogComments { get; set; }
     }
 
+    public class Notifications
+    {
+        public int? UserId { get; set; }
+        public int? BlogId { get; set; }
+        public string? Message { get; set; }
+        public string? UserFullName { get; set; }
+    }
+
     public class BlogImage : BaseModel
     {
         public int ImageId { get; set; }

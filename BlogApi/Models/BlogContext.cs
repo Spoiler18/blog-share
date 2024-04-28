@@ -16,6 +16,7 @@ namespace BlogApi.Models
         public virtual DbSet<BlogReaction> BlogReactions { get; set; }
         public virtual DbSet<CommentReaction> CommentReactions { get; set; }
         public virtual DbSet<BlogImage> BlogImages { get; set; }
+        public virtual DbSet<UserLog> UserLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +42,10 @@ namespace BlogApi.Models
 
             modelBuilder.Entity<BlogImage>(entity => {
                 entity.HasKey(k => k.ImageId);
+            });
+
+            modelBuilder.Entity<UserLog>(entity => {
+                entity.HasKey(k => k.LogId);
             });
 
             OnModelCreatingPartial(modelBuilder);

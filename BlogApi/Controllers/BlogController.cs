@@ -58,5 +58,12 @@ namespace BlogApi.Controllers
         {
             return Ok(await _blogService.DeleteBlogAsync(blog));
         }
+
+        [Route("GetUserNotifications/{userId}")]
+        [HttpGet]
+        public async Task<IActionResult> GetUserNotifications(int? userId)
+        {
+            return Ok(await _blogService.GetUserNotifications(userId));
+        }
     }
 }
