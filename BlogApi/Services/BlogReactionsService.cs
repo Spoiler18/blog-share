@@ -26,6 +26,7 @@ namespace BlogApi.Services
                             BlogId = reactions.BlogId,
                             UserReaction = reactions.UserReaction,
                             UserReactionFullName = user.FirstName + " " + user.LastName,
+                            CreatedOn = reactions.CreatedOn,
                         }).ToList();
 
             return data;

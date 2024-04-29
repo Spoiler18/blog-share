@@ -33,6 +33,13 @@
         public string? UserFullName { get; set; }
     }
 
+    public class PopularUsers
+    {
+        public int? UserId { get; set; }
+        public int? TotalPopularity { get; set; }
+        public string? UserName { get; set; }
+    }
+
     public class BlogImage : BaseModel
     {
         public int ImageId { get; set; }

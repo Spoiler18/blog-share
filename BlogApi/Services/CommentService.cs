@@ -32,6 +32,7 @@ namespace BlogApi.Services
                            UserComment = comment.UserComment,
                            ReplyToCommentId = comment.ReplyToCommentId,
                            UserCommentFullName = user.FirstName + " " + user.LastName,
+                           CreatedOn = comment.CreatedOn,
                        }).ToList();
 
             Parallel.ForEach(data, item =>

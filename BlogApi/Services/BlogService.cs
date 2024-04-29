@@ -458,17 +458,44 @@ namespace BlogApi.Services
             return response;
         }
 
+        // top 10 most popular blogs
         public async Task<List<DetailedBlogApplications>> GetTopBlogs(bool Alltime,DateTime? fromDate, DateTime? toDate)
         {
             var blogs = await GetBlogsListForBlogs();
             if(Alltime == true)
             {
-                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).OrderBy(item => item.Popularity).Take(10).ToList();
+                return blogs.OrderBy(item => item.Popularity).Take(10).ToList();
             }
             else
             {
-                return blogs.OrderBy(item => item.Popularity).Take(10).ToList();
+                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).OrderBy(item => item.Popularity).Take(10).ToList();
             }
+        }
+
+        // get top bloggers 
+        public async Task<List<PopularUsers>> GetTopBloggers(bool Alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            var blogs = await GetBlogsListForBlogs();
+
+            if (Alltime == true)
+            {
+                blogs = blogs.OrderBy(item => item.Popularity).Take(10).ToList();
+            }
+            else
+            {
+                blogs = blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).OrderBy(item => item.Popularity).Take(10).ToList();
+            }
+
+            var userIds = blogs.Select(item => item.UserId).Distinct().ToList();
+
+            var popularUsers = blogs.GroupBy(item => item.UserId).Select(group => new PopularUsers
+            {
+                UserId = group.Key,
+                TotalPopularity = group.Sum(item => item.Popularity),
+                UserName = group.First().FullName,
+            }).ToList();
+
+            return popularUsers.OrderBy(item => item.TotalPopularity).ToList();
         }
 
         // blogs added in a time frame or all time
@@ -477,12 +504,48 @@ namespace BlogApi.Services
             var blogs = await GetBlogsListForBlogs();
             if (Alltime == true)
             {
-                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).ToList();
+                return blogs.ToList();
             }
             else
             {
-                return blogs.ToList();
+                return blogs.Where(item => item.CreatedOn >= fromDate && item.CreatedOn <= toDate).ToList();
             }
+        }
+
+        // get the comments , reactions of blogs in a time frame
+        public async Task<DetailedBlogApplications> GetBlogDetailPerodically(int? blogId,bool Alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            DetailedBlogApplications data = new DetailedBlogApplications();
+
+            data = (from blog in _blogContext.BlogApplication
+                    join user in _blogContext.UserDetail on blog.UserId equals user.UserId
+                    where blog.IsDeleted != true && blog.BlogId == blogId
+                    select new DetailedBlogApplications
+                    {
+                        BlogId = blog.BlogId,
+                        BlogTitle = blog.BlogTitle,
+                        BlogDescription = blog.BlogDescription,
+                        CreatedOn = blog.CreatedOn,
+                        FullName = user.FirstName + " " + user.LastName,
+                        UserId = blog.UserId,
+                    }).FirstOrDefault();
+
+            var blogReaction = await _blogReactionService.GetBlogReaction(data.BlogId);
+            var blogComment = await _commentService.GetBlogComments(data.BlogId);
+
+            if (Alltime == true)
+            {
+            }
+            else
+            {
+                blogReaction = blogReaction.Where(item => item.CreatedOn.Value.Date >= fromDate.Value.Date && toDate.Value.Date >= item.CreatedOn.Value.Date).ToList();
+                blogComment = blogComment.Where(item => item.CreatedOn.Value.Date >= fromDate.Value.Date && toDate.Value.Date >= item.CreatedOn.Value.Date).ToList();
+            }
+
+            data.BlogReactions = blogReaction;
+            data.BlogComments = blogComment;
+
+            return data;
         }
     }
 }

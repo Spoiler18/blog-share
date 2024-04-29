@@ -65,5 +65,33 @@ namespace BlogApi.Controllers
         {
             return Ok(await _blogService.GetUserNotifications(userId));
         }
+
+        [Route("GetTopBlogs/{AllTime}/{fromDate}/{toDate}")]
+        [HttpGet]
+        public async Task<IActionResult> GetTopBlogs(bool alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            return Ok(await _blogService.GetTopBlogs(alltime,fromDate,toDate)) ;
+        }
+
+        [Route("GetTopBloggers/{AllTime}/{fromDate}/{toDate}")]
+        [HttpGet]
+        public async Task<IActionResult> GetTopBloggers(bool alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            return Ok(await _blogService.GetTopBloggers(alltime, fromDate, toDate));
+        }
+
+        [Route("GetBlogSummary/{AllTime}/{fromDate}/{toDate}")]
+        [HttpGet]
+        public async Task<IActionResult> GetBlogSummary(bool alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            return Ok(await _blogService.GetBlogSummary(alltime, fromDate, toDate));
+        }
+
+        [Route("GetBlogDetailPeriodically/{blogId}/{AllTime}/{fromDate}/{toDate}")]
+        [HttpGet]
+        public async Task<IActionResult> GetBlogDetailPeriodically(int? blogId,bool alltime, DateTime? fromDate, DateTime? toDate)
+        {
+            return Ok(await _blogService.GetBlogDetailPerodically(blogId,alltime, fromDate, toDate));
+        }
     }
 }

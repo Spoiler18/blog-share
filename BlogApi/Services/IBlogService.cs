@@ -11,5 +11,9 @@ namespace BlogApi.Services
         Task<ResponseModel> EditBlogAsync(AddEditBlogApplications blogApplications);
         Task<ResponseModel> DeleteBlogAsync(int? blogApplicationId);
         Task<List<Notifications>> GetUserNotifications(int? userId);
+        Task<List<DetailedBlogApplications>> GetTopBlogs(bool Alltime, DateTime? fromDate, DateTime? toDate);
+        Task<List<PopularUsers>> GetTopBloggers(bool Alltime, DateTime? fromDate, DateTime? toDate);
+        Task<List<DetailedBlogApplications>> GetBlogSummary(bool Alltime, DateTime? fromDate, DateTime? toDate);
+        Task<DetailedBlogApplications> GetBlogDetailPerodically(int? blogId, bool Alltime, DateTime? fromDate, DateTime? toDate);
     }
 }
